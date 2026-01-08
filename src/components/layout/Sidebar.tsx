@@ -1,8 +1,5 @@
 import { NavLink, useLocation } from "react-router-dom";
-import { 
-  LayoutDashboard, Users, Brain, CreditCard, Hexagon, Mail
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { LayoutDashboard, Users, Brain, CreditCard, Hexagon, Mail } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const menuItems = [
@@ -15,11 +12,11 @@ const menuItems = [
 ];
 
 interface SidebarProps {
-  collapsed?: boolean;
+  collapsed: boolean;
   onClose?: () => void;
 }
 
-const Sidebar = ({ collapsed = false, onClose }: SidebarProps) => {
+const Sidebar = ({ collapsed, onClose }: SidebarProps) => {
   const location = useLocation();
 
   return (
@@ -59,15 +56,13 @@ const Sidebar = ({ collapsed = false, onClose }: SidebarProps) => {
         })}
       </nav>
 
-      <div className={cn(!collapsed ? "p-4" : "p-2")}>
-        {!collapsed && (
+      {!collapsed && (
+        <div className="p-4">
           <div className="bg-sidebar-accent rounded-lg p-4">
-            <p className="text-sidebar-foreground text-xs opacity-70">
-              Admin Panel v1.0
-            </p>
+            <p className="text-sidebar-foreground text-xs opacity-70">Admin Panel v1.0</p>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </aside>
   );
 };

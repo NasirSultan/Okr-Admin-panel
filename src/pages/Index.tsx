@@ -66,7 +66,7 @@ const Index = () => {
 
   return (
     <AdminLayout>
-      <div className="space-y-6  ">
+      <div className="space-y-6 p-2 ">
         <div>
           <h2 className="text-2xl font-display font-bold text-foreground">Dashboard</h2>
           <p className="text-muted-foreground">Here is your weekly overview.</p>

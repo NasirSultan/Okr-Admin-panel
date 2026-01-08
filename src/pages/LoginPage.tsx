@@ -44,16 +44,19 @@ const LoginPage = () => {
     }
   }, [navigate]);
 
-  const showToast = (options: {
-    title: string;
-    description?: string;
-    variant?: "default" | "destructive";
-  }) => {
-    toast({
-      ...options,
-      position: "bottom-center"
-    });
-  };
+const showToast = (options: {
+  title: string;
+  description?: string;
+  variant?: "default" | "destructive";
+}) => {
+  const isSmallScreen = window.innerWidth < 640;
+
+  toast({
+    ...options,
+    position: isSmallScreen ? "top-center" : "bottom-center"
+  });
+};
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

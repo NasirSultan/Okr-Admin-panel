@@ -7,10 +7,19 @@ interface AdminLayoutProps {
 }
 
 const AdminLayout = ({ children }: AdminLayoutProps) => {
+  const [collapsed, setCollapsed] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [isSmallScreen, setIsSmallScreen] = useState(false);
 
   const sidebarWidth = 256;
+
+  const handleToggleSidebar = () => {
+    if (isSmallScreen) {
+      setMobileSidebarOpen(!mobileSidebarOpen);
+    } else {
+      setCollapsed(!collapsed);
+    }
+  };
 
   useEffect(() => {
     const handleResize = () => setIsSmallScreen(window.innerWidth < 768);
@@ -23,7 +32,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
     <div className="min-h-screen flex relative">
       {(mobileSidebarOpen || !isSmallScreen) && (
         <Sidebar
-          collapsed={isSmallScreen && !mobileSidebarOpen}
+          collapsed={isSmallScreen ? false : collapsed}
           onClose={() => setMobileSidebarOpen(false)}
         />
       )}
@@ -37,10 +46,10 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
 
       <div
         className="flex-1 flex flex-col"
-        style={{ marginLeft: !isSmallScreen ? sidebarWidth : 0 }}
+        style={{ marginLeft: !isSmallScreen ? (collapsed ? 80 : sidebarWidth) : 0 }}
       >
-        <Header onToggleSidebar={() => setMobileSidebarOpen(true)} />
-        <main className="flex-1 p-4 overflow-auto">{children}</main>
+        <Header onToggleSidebar={handleToggleSidebar} />
+        <main className="flex-1 p-2 overflow-auto">{children}</main>
       </div>
     </div>
   );
