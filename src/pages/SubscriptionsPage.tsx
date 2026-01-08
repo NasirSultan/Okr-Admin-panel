@@ -1,114 +1,167 @@
-import { CreditCard, TrendingUp, Users, DollarSign } from "lucide-react";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import AdminLayout from "@/components/layout/AdminLayout";
-import { Badge } from "@/components/ui/badge";
+import { useEffect, useState } from "react"
+import { CreditCard, TrendingUp, Users, DollarSign } from "lucide-react"
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
+import AdminLayout from "@/components/layout/AdminLayout"
+import { Badge } from "@/components/ui/badge"
+import { getSubscriptionDashboard } from "../api/subscription"
 
-const revenueData = [
-  { month: "Jan", revenue: 45000, subscriptions: 1200 },
-  { month: "Feb", revenue: 52000, subscriptions: 1350 },
-  { month: "Mar", revenue: 48000, subscriptions: 1280 },
-  { month: "Apr", revenue: 61000, subscriptions: 1520 },
-  { month: "May", revenue: 55000, subscriptions: 1400 },
-  { month: "Jun", revenue: 67000, subscriptions: 1680 },
-  { month: "Jul", revenue: 72000, subscriptions: 1820 },
-];
-
-const plans = [
-  { name: "Basic", price: "$9/mo", users: 3240, percentage: 38, color: "hsl(210, 80%, 55%)" },
-  { name: "Pro", price: "$29/mo", users: 4120, percentage: 49, color: "hsl(12, 79%, 43%)" },
-  { name: "Enterprise", price: "$99/mo", users: 1072, percentage: 13, color: "hsl(142, 70%, 45%)" },
-];
-
-const stats = [
-  { title: "Total Revenue", value: "$72,450", icon: DollarSign, change: "+18.2%" },
-  { title: "Active Subscriptions", value: "8,432", icon: CreditCard, change: "+5.3%" },
-  { title: "Avg. Revenue/User", value: "$8.60", icon: TrendingUp, change: "+3.1%" },
-  { title: "Paying Users", value: "8,432", icon: Users, change: "+12%" },
-];
+const CACHE_KEY = "subscriptionDashboard"
+const DATE_KEY = "subscriptionDashboardDate"
 
 const SubscriptionsPage = () => {
+  const [dashboard, setDashboard] = useState(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchDashboard = async () => {
+      setLoading(true)
+
+      const today = new Date().toISOString().split("T")[0]
+      const cachedData = localStorage.getItem(CACHE_KEY)
+      const cachedDate = localStorage.getItem(DATE_KEY)
+
+      if (cachedData && cachedDate === today) {
+        setDashboard(JSON.parse(cachedData))
+        setLoading(false)
+        return
+      }
+
+      const data = await getSubscriptionDashboard()
+      localStorage.setItem(CACHE_KEY, JSON.stringify(data))
+      localStorage.setItem(DATE_KEY, today)
+      setDashboard(data)
+      setLoading(false)
+    }
+
+    fetchDashboard()
+  }, [])
+
+  const stats = dashboard
+    ? [
+        { title: "Total Revenue", value: `$${dashboard.totalRevenue.toLocaleString()}`, icon: DollarSign, change: "+18.2%" },
+        { title: "Active Subscriptions", value: dashboard.activeSubscriptions.toLocaleString(), icon: CreditCard, change: "+5.3%" },
+        { title: "Avg. Revenue/User", value: `$${dashboard.avgRevenuePerUser.toFixed(2)}`, icon: TrendingUp, change: "+12%" },
+        { title: "Paying Users", value: dashboard.payingUsers.toLocaleString(), icon: Users, change: "+12%" },
+      ]
+    : []
+
   return (
     <AdminLayout>
-      <div className="space-y-6 animate-fade-in">
+      <div className="space-y-6 animate-fade-in p-2">
         <div>
           <h2 className="text-2xl font-display font-bold text-foreground">Subscriptions</h2>
           <p className="text-muted-foreground">Track subscription metrics and revenue</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {stats.map((stat, index) => (
-            <div 
-              key={stat.title}
-              className="bg-card rounded-xl p-6 border border-border animate-slide-up"
-              style={{ animationDelay: `${index * 50}ms` }}
-            >
-              <div className="flex items-center justify-between mb-4">
-                <div className="w-10 h-10 rounded-lg bg-gradient-primary flex items-center justify-center">
-                  <stat.icon className="h-5 w-5 text-primary-foreground" />
+        {loading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="bg-card rounded-xl p-6 border border-border animate-pulse h-28" />
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {stats.map((stat, index) => (
+              <div
+                key={stat.title}
+                className="bg-card rounded-xl p-6 border border-border animate-slide-up"
+                style={{ animationDelay: `${index * 50}ms` }}
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-10 h-10 rounded-lg bg-gradient-primary flex items-center justify-center">
+                    <stat.icon className="h-5 w-5 text-primary-foreground" />
+                  </div>
+                  <span className="text-sm font-medium text-success">{stat.change}</span>
                 </div>
-                <span className="text-sm font-medium text-success">{stat.change}</span>
+                <p className="text-2xl font-display font-bold text-foreground">{stat.value}</p>
+                <p className="text-sm text-muted-foreground">{stat.title}</p>
               </div>
-              <p className="text-2xl font-display font-bold text-foreground">{stat.value}</p>
-              <p className="text-sm text-muted-foreground">{stat.title}</p>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 bg-card rounded-xl p-6 border border-border">
             <h3 className="text-lg font-display font-semibold text-foreground mb-4">Revenue Trend</h3>
-            <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={revenueData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(220, 15%, 88%)" />
-                  <XAxis dataKey="month" stroke="hsl(220, 10%, 45%)" />
-                  <YAxis stroke="hsl(220, 10%, 45%)" tickFormatter={(value) => `$${value / 1000}k`} />
-                  <Tooltip 
-                    contentStyle={{
-                      backgroundColor: "hsl(0, 0%, 100%)",
-                      border: "1px solid hsl(220, 15%, 88%)",
-                      borderRadius: "8px",
-                    }}
-                    formatter={(value) => [`$${value.toLocaleString()}`, "Revenue"]}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="revenue" 
-                    stroke="hsl(12, 79%, 43%)" 
-                    strokeWidth={3}
-                    dot={{ fill: "hsl(12, 79%, 43%)", strokeWidth: 2 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
+            {loading ? (
+              <div className="h-[300px] bg-muted animate-pulse rounded-xl" />
+            ) : (
+              <div className="h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={dashboard.revenueTrend}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(220, 15%, 88%)" />
+                    <XAxis dataKey="month" stroke="hsl(220, 10%, 45%)" />
+                    <YAxis stroke="hsl(220, 10%, 45%)" tickFormatter={value => `$${value}`} />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "hsl(0, 0%, 100%)",
+                        border: "1px solid hsl(220, 15%, 88%)",
+                        borderRadius: "8px"
+                      }}
+                      formatter={value => [`$${value.toLocaleString()}`, "Revenue"]}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="revenue"
+                      stroke="hsl(12, 79%, 43%)"
+                      strokeWidth={3}
+                      dot={{ fill: "hsl(12, 79%, 43%)", strokeWidth: 2 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            )}
           </div>
 
           <div className="bg-card rounded-xl p-6 border border-border">
             <h3 className="text-lg font-display font-semibold text-foreground mb-4">Plan Distribution</h3>
-            <div className="space-y-4">
-              {plans.map((plan) => (
-                <div key={plan.name} className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium text-foreground">{plan.name}</span>
-                      <Badge variant="secondary">{plan.price}</Badge>
+            {loading ? (
+              <div className="space-y-4">
+                {[...Array(3)].map((_, i) => (
+                  <div key={i} className="h-12 bg-muted rounded-xl animate-pulse" />
+                ))}
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {dashboard.planDistribution.map(plan => {
+                  const totalUsers = dashboard.planDistribution.reduce((sum, p) => sum + p.users, 0)
+                  const percentage = Math.round((plan.users / totalUsers) * 100)
+                  const color =
+                    plan.price === 0
+                      ? "hsl(210, 80%, 55%)"
+                      : plan.price < 20
+                      ? "hsl(12, 79%, 43%)"
+                      : "hsl(142, 70%, 45%)"
+
+                  return (
+                    <div key={plan.name} className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium text-foreground">{plan.name}</span>
+                          <Badge variant="secondary">
+                            {plan.price === 0 ? "Free" : `$${plan.price}/mo`}
+                          </Badge>
+                        </div>
+                        <span className="text-sm text-muted-foreground">
+                          {plan.users.toLocaleString()} users
+                        </span>
+                      </div>
+                      <div className="h-2 bg-muted rounded-full overflow-hidden">
+                        <div
+                          className="h-full rounded-full transition-all duration-500"
+                          style={{ width: `${percentage}%`, backgroundColor: color }}
+                        />
+                      </div>
                     </div>
-                    <span className="text-sm text-muted-foreground">{plan.users.toLocaleString()} users</span>
-                  </div>
-                  <div className="h-2 bg-muted rounded-full overflow-hidden">
-                    <div 
-                      className="h-full rounded-full transition-all duration-500"
-                      style={{ width: `${plan.percentage}%`, backgroundColor: plan.color }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
+                  )
+                })}
+              </div>
+            )}
           </div>
         </div>
       </div>
     </AdminLayout>
-  );
-};
+  )
+}
 
-export default SubscriptionsPage;
+export default SubscriptionsPage

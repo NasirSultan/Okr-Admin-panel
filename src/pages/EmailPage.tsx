@@ -1,165 +1,150 @@
-import { useState } from "react";
-import { Mail, Send, Inbox, Star, Trash2, Search, Plus } from "lucide-react";
-import AdminLayout from "@/components/layout/AdminLayout";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
+import { useEffect, useState } from 'react'
+import AdminLayout from '@/components/layout/AdminLayout'
+import { triggerWeeklyEmail } from '../api/userManagement'
 
-const emails = [
-  { 
-    id: 1, 
-    from: "john@example.com", 
-    subject: "New User Registration Alert", 
-    preview: "A new user has registered on the platform...", 
-    time: "10:30 AM",
-    read: false,
-    starred: true
-  },
-  { 
-    id: 2, 
-    from: "support@system.com", 
-    subject: "Weekly Analytics Report", 
-    preview: "Here's your weekly performance summary...", 
-    time: "9:15 AM",
-    read: false,
-    starred: false
-  },
-  { 
-    id: 3, 
-    from: "alerts@monitoring.io", 
-    subject: "System Health Check Passed", 
-    preview: "All systems are operational and running smoothly...", 
-    time: "Yesterday",
-    read: true,
-    starred: false
-  },
-  { 
-    id: 4, 
-    from: "billing@payments.com", 
-    subject: "Payment Processed Successfully", 
-    preview: "Payment of $1,245.00 has been processed...", 
-    time: "Yesterday",
-    read: true,
-    starred: true
-  },
-  { 
-    id: 5, 
-    from: "team@company.com", 
-    subject: "Team Meeting Tomorrow", 
-    preview: "Reminder: We have a team meeting scheduled for...", 
-    time: "2 days ago",
-    read: true,
-    starred: false
-  },
-];
+export default function WeeklyEmailTrigger() {
+  const [lastTrigger, setLastTrigger] = useState('')
+  const [autoSend, setAutoSend] = useState(false)
+  const [loading, setLoading] = useState(false)
 
-const folders = [
-  { name: "Inbox", icon: Inbox, count: 24 },
-  { name: "Sent", icon: Send, count: 0 },
-  { name: "Starred", icon: Star, count: 5 },
-  { name: "Trash", icon: Trash2, count: 3 },
-];
+  const getLastMonday = () => {
+    const now = new Date()
+    const day = now.getDay()
+    const lastMonday = new Date(now)
+    lastMonday.setDate(now.getDate() - ((day + 6) % 7))
+    lastMonday.setHours(9, 0, 0, 0)
+    return lastMonday.toISOString()
+  }
 
-const EmailPage = () => {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedFolder, setSelectedFolder] = useState("Inbox");
+  // Load auto-send state from localStorage
+  useEffect(() => {
+    const storedAutoSend = localStorage.getItem('weeklyEmailAuto') === 'true'
+    setAutoSend(storedAutoSend)
+    setLastTrigger(localStorage.getItem('lastWeeklyEmail') || getLastMonday())
+  }, [])
 
-  const filteredEmails = emails.filter(email =>
-    email.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    email.from.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const handleTrigger = async () => {
+    const confirmSend = window.confirm('Are you sure you want to trigger the weekly email?')
+    if (!confirmSend) return
+
+    try {
+      setLoading(true)
+      await triggerWeeklyEmail()
+      const now = new Date().toISOString()
+      setLastTrigger(now)
+      localStorage.setItem('lastWeeklyEmail', now)
+      alert('Weekly email triggered successfully!')
+    } catch (err) {
+      console.error(err)
+      alert('Failed to trigger weekly email')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const toggleAutoSend = () => {
+    const newValue = !autoSend
+    setAutoSend(newValue)
+    localStorage.setItem('weeklyEmailAuto', newValue.toString())
+  }
+
+  useEffect(() => {
+    if (!autoSend) return
+
+    const scheduleNext = () => {
+      const now = new Date()
+      const day = now.getDay()
+      const nextMonday = new Date(now)
+      nextMonday.setDate(now.getDate() + ((1 + 7 - day) % 7))
+      nextMonday.setHours(9, 0, 0, 0)
+      const delay = nextMonday.getTime() - now.getTime()
+
+      const timer = setTimeout(async () => {
+        await handleTrigger()
+        scheduleNext()
+      }, delay)
+
+      return () => clearTimeout(timer)
+    }
+
+    const cleanup = scheduleNext()
+    return cleanup
+  }, [autoSend])
 
   return (
     <AdminLayout>
-      <div className="space-y-6 animate-fade-in">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h2 className="text-2xl font-display font-bold text-foreground">Email Management</h2>
-            <p className="text-muted-foreground">View and manage system emails</p>
+      <div className="max-w-6xl mx-auto p-4 sm:p-8 space-y-6">
+        {/* Header */}
+        <div className="bg-white rounded-2xl shadow-xl p-6 sm:p-8 border-t-4 border-red-700">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0">
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold text-black mb-1">Weekly Email Campaign</h1>
+              <p className="text-black">Manage automated weekly email notifications</p>
+            </div>
+            <div className="bg-red-100 p-4 rounded-xl">
+              <svg className="w-12 h-12 text-red-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+            </div>
           </div>
-          <Button variant="gradient">
-            <Plus className="h-4 w-4" />
-            Compose
-          </Button>
+
+          {/* Action Buttons */}
+          <div className="flex flex-col sm:flex-row gap-4 mt-6">
+            <button
+              onClick={handleTrigger}
+              disabled={loading}
+              className="flex-1 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-black font-semibold px-6 py-3 rounded-xl shadow-lg transition transform hover:-translate-y-0.5"
+            >
+              {loading ? 'Sending...' : 'Trigger Weekly Email'}
+            </button>
+
+            <button
+              onClick={toggleAutoSend}
+              className={`flex-1 px-6 py-3 rounded-xl font-semibold shadow-lg transition transform hover:-translate-y-0.5 ${
+                autoSend
+                  ? 'bg-gradient-to-r from-red-400 to-red-500 text-black hover:from-red-500 hover:to-red-600'
+                  : 'bg-gray-300 text-black hover:bg-gray-400'
+              }`}
+            >
+              Auto Send: {autoSend ? 'On' : 'Off'}
+            </button>
+          </div>
+
+          {/* Last Trigger Info */}
+          {lastTrigger && (
+            <div className="mt-6 bg-red-50 border-l-4 border-red-700 p-4 rounded-lg flex items-center gap-2">
+              <svg className="w-5 h-5 text-red-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <p className="text-black">
+                Last triggered: <span className="font-semibold text-black">{new Date(lastTrigger).toLocaleString()}</span>
+              </p>
+            </div>
+          )}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Sidebar */}
-          <div className="lg:col-span-1 space-y-2">
-            {folders.map((folder) => (
-              <button
-                key={folder.name}
-                onClick={() => setSelectedFolder(folder.name)}
-                className={`w-full flex items-center justify-between px-4 py-3 rounded-lg transition-all duration-200 ${
-                  selectedFolder === folder.name 
-                    ? "bg-primary text-primary-foreground" 
-                    : "bg-card hover:bg-muted text-foreground"
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <folder.icon className="h-4 w-4" />
-                  <span className="font-medium">{folder.name}</span>
-                </div>
-                {folder.count > 0 && (
-                  <Badge variant={selectedFolder === folder.name ? "secondary" : "outline"}>
-                    {folder.count}
-                  </Badge>
-                )}
-              </button>
-            ))}
+        {/* Information Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          <div className="bg-white rounded-2xl shadow-xl p-6 border-t-4 border-red-700">
+            <h2 className="text-xl font-bold text-black mb-2">Email Schedule</h2>
+            <p className="text-black">Emails are sent automatically every Monday at 9:00 AM when Auto Send is enabled.</p>
           </div>
 
-          {/* Email List */}
-          <div className="lg:col-span-3 space-y-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input 
-                placeholder="Search emails..." 
-                className="pl-10"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-
-            <div className="bg-card rounded-xl border border-border overflow-hidden">
-              {filteredEmails.map((email, index) => (
-                <div 
-                  key={email.id}
-                  className={`p-4 border-b border-border last:border-0 hover:bg-muted/50 cursor-pointer transition-all duration-200 animate-slide-up ${
-                    !email.read ? "bg-primary/5" : ""
-                  }`}
-                  style={{ animationDelay: `${index * 50}ms` }}
-                >
-                  <div className="flex items-start gap-4">
-                    <div className="flex-shrink-0">
-                      <button className={`p-1 rounded ${email.starred ? "text-warning" : "text-muted-foreground hover:text-warning"}`}>
-                        <Star className={`h-4 w-4 ${email.starred ? "fill-current" : ""}`} />
-                      </button>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between gap-2 mb-1">
-                        <span className={`text-sm ${!email.read ? "font-semibold text-foreground" : "text-muted-foreground"}`}>
-                          {email.from}
-                        </span>
-                        <span className="text-xs text-muted-foreground flex-shrink-0">{email.time}</span>
-                      </div>
-                      <p className={`text-sm mb-1 ${!email.read ? "font-medium text-foreground" : "text-foreground"}`}>
-                        {email.subject}
-                      </p>
-                      <p className="text-sm text-muted-foreground truncate">{email.preview}</p>
-                    </div>
-                    {!email.read && (
-                      <div className="w-2 h-2 rounded-full bg-primary flex-shrink-0 mt-2" />
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
+          <div className="bg-white rounded-2xl shadow-xl p-6 border-t-4 border-red-500">
+            <h2 className="text-xl font-bold text-black mb-2">Campaign Types</h2>
+            <ul className="space-y-4">
+              <li className="bg-red-50 border-l-4 border-red-400 p-4 rounded-lg">
+                <h3 className="font-semibold text-black">Re-engagement Campaigns</h3>
+                <p className="text-black text-sm">For inactive users. Example: "We noticed you haven't played recently. Your journey doesn't have to stop here."</p>
+              </li>
+              <li className="bg-pink-50 border-l-4 border-pink-400 p-4 rounded-lg">
+                <h3 className="font-semibold text-black">Performance Reports</h3>
+                <p className="text-black text-sm">Weekly performance updates for active users. Example: "Platform updates and achievements summary."</p>
+              </li>
+            </ul>
           </div>
         </div>
       </div>
     </AdminLayout>
-  );
-};
-
-export default EmailPage;
+  )
+}

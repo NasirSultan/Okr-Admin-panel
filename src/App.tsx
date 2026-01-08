@@ -10,6 +10,8 @@ import SubscriptionsPage from "./pages/SubscriptionsPage";
 import SixPointsPage from "./pages/SixPointsPage";
 import EmailPage from "./pages/EmailPage";
 import NotFound from "./pages/NotFound";
+import UserDetail from "./pages/UserDetail";
+
 
 const queryClient = new QueryClient();
 
@@ -26,6 +28,7 @@ const App = () => (
           <Route path="/subscriptions" element={<SubscriptionsPage />} />
           <Route path="/six-points" element={<SixPointsPage />} />
           <Route path="/email" element={<EmailPage />} />
+          <Route path="/user-detail" element={<UserDetail />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
