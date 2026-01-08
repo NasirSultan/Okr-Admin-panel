@@ -1,12 +1,22 @@
-import { Bell, Search, Settings, User, Menu } from "lucide-react";
+import { Bell, User, LogOut, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { useNavigate } from "react-router-dom";
 
 interface HeaderProps {
   onToggleSidebar?: () => void;
 }
 
 const Header = ({ onToggleSidebar }: HeaderProps) => {
+  const navigate = useNavigate();
+
+  const adminUser = JSON.parse(localStorage.getItem("adminUser") || "{}");
+
+  const handleLogout = () => {
+    localStorage.removeItem("isAuthenticated");
+    localStorage.removeItem("adminUser");
+    navigate("/", { replace: true });
+  };
+
   return (
     <header className="h-16 border-b border-border bg-card px-4 flex items-center justify-between sticky top-0 z-40">
       <div className="flex items-center gap-4">
@@ -16,19 +26,17 @@ const Header = ({ onToggleSidebar }: HeaderProps) => {
           </Button>
         </div>
 
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-gradient-primary flex items-center justify-center">
-            <span className="text-primary-foreground font-bold text-sm">A</span>
-          </div>
-          <h1 className="font-display font-bold text-xl text-foreground">Admin Panel</h1>
-        </div>
-      </div>
+      <div className="flex items-center gap-2">
+  <div className="w-8 h-8 rounded-lg bg-gradient-primary flex items-center justify-center">
+    <span className="text-primary-foreground font-bold text-sm">
+      {adminUser.name ? adminUser.name[0] : "A"}
+    </span>
+  </div>
+  <h1 className="font-display font-bold text-xl text-foreground">
+    Admin
+  </h1>
+</div>
 
-      <div className="flex-1 max-w-md mx-4 hidden md:block">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Search..." className="pl-10 bg-background border-border" />
-        </div>
       </div>
 
       <div className="flex items-center gap-2">
@@ -38,15 +46,20 @@ const Header = ({ onToggleSidebar }: HeaderProps) => {
             3
           </span>
         </Button>
-        <Button variant="ghost" size="icon">
-          <Settings className="h-5 w-5" />
-        </Button>
-        <div className="h-8 w-px bg-border mx-2 hidden md:block" />
-        <Button variant="ghost" className="gap-2 hidden md:flex">
-          <div className="w-8 h-8 rounded-full bg-gradient-primary flex items-center justify-center">
-            <User className="h-4 w-4 text-primary-foreground" />
-          </div>
-          <span className="text-sm font-medium">Admin</span>
+
+        <div className="h-8 w-px bg-border mx-2" />
+
+        {adminUser.name && (
+          <Button variant="ghost" className="gap-2 flex items-center">
+            <div className="w-8 h-8 rounded-full bg-gradient-primary flex items-center justify-center">
+              <User className="h-4 w-4 text-primary-foreground" />
+            </div>
+            <span className="text-sm font-medium">{adminUser.name}</span>
+          </Button>
+        )}
+
+        <Button variant="ghost" size="icon" onClick={handleLogout}>
+          <LogOut className="h-5 w-5" />
         </Button>
       </div>
     </header>

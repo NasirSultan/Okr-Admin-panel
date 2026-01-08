@@ -11,7 +11,7 @@ import SixPointsPage from "./pages/SixPointsPage";
 import EmailPage from "./pages/EmailPage";
 import NotFound from "./pages/NotFound";
 import UserDetail from "./pages/UserDetail";
-
+import LoginPage from "./pages/LoginPage";
 
 const queryClient = new QueryClient();
 
@@ -22,13 +22,14 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Index />} />
+          <Route path="/Dashboard" element={<Index />} />
           <Route path="/users" element={<UsersPage />} />
           <Route path="/ai-performance" element={<AIPerformancePage />} />
           <Route path="/subscriptions" element={<SubscriptionsPage />} />
-          <Route path="/six-points" element={<SixPointsPage />} />
+          <Route path="/xp-points" element={<SixPointsPage />} />
           <Route path="/email" element={<EmailPage />} />
           <Route path="/user-detail" element={<UserDetail />} />
+         <Route path="/" element={<LoginPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
