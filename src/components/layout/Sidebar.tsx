@@ -1,6 +1,9 @@
-import { NavLink, useLocation } from "react-router-dom";
+import { useEffect } from "react";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
+import jwtDecode from "jwt-decode";
 import { LayoutDashboard, Users, Brain, CreditCard, Hexagon, Mail } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
 
 const menuItems = [
   { title: "Dashboard", url: "/Dashboard", icon: LayoutDashboard },
@@ -16,16 +19,54 @@ interface SidebarProps {
   onClose?: () => void;
 }
 
+interface TokenPayload {
+  id: string;
+  role: string;
+  exp: number;
+}
+
 const Sidebar = ({ collapsed, onClose }: SidebarProps) => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
+  useEffect(() => {
+    const token = localStorage.getItem("accessToken");
+    if (!token) {
+      toast({
+        title: "Access denied",
+        description: "You are not logged in.",
+        variant: "destructive"
+      });
+      navigate("/");
+      return;
+    }
+
+    try {
+      const decoded = jwtDecode<TokenPayload>(token);
+      if (decoded.role !== "admin") {
+        toast({
+          title: "Access denied",
+          description: "You are not an admin.",
+          variant: "destructive"
+        });
+        navigate("/");
+      }
+    } catch {
+      toast({
+        title: "Access denied",
+        description: "Invalid token.",
+        variant: "destructive"
+      });
+      navigate("/login");
+    }
+  }, [navigate, toast]);
 
   return (
-    <aside
-      className={cn(
-        "bg-gradient-dark fixed top-0 left-0 h-full flex flex-col z-50",
-        collapsed ? "w-20" : "w-64"
-      )}
-    >
+    <aside className={cn(
+      "bg-gradient-dark fixed top-0 left-0 h-full flex flex-col z-50",
+      collapsed ? "w-20" : "w-64"
+    )}>
       <div className="flex items-center justify-center p-4">
         <img
           src="/1171275974.png"
