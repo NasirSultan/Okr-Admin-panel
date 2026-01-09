@@ -15,39 +15,44 @@ import {
 } from "recharts";
 
 const CACHE_KEY = "weeklyReportCache";
-const CACHE_EXPIRY = 24 * 60 * 60 * 1000; // 1 day in milliseconds
+const REFRESH_INTERVAL = 2 * 60 * 60 * 1000;
 
 const Index = () => {
-  const [report, setReport] = useState(null);
+  const [report, setReport] = useState<any>(null);
+
+  const loadFromCache = () => {
+    const cached = localStorage.getItem(CACHE_KEY);
+    if (!cached) return;
+
+    const parsed = JSON.parse(cached);
+    setReport(parsed.data);
+  };
+
+  const fetchAndUpdate = async () => {
+    try {
+      const res = await getWeeklyReport();
+      setReport(res.data);
+      localStorage.setItem(
+        CACHE_KEY,
+        JSON.stringify({
+          data: res.data,
+          timestamp: Date.now()
+        })
+      );
+    } catch (e) {
+      console.error("Weekly report fetch failed", e);
+    }
+  };
 
   useEffect(() => {
-    const fetchReport = async () => {
-      try {
-        // Check cache
-        const cached = localStorage.getItem(CACHE_KEY);
-        if (cached) {
-          const parsed = JSON.parse(cached);
-          const now = new Date().getTime();
-          if (now - parsed.timestamp < CACHE_EXPIRY) {
-            setReport(parsed.data);
-            return;
-          }
-        }
+    loadFromCache();
+    fetchAndUpdate();
 
-        // Fetch from API if no cache or expired
-        const data = await getWeeklyReport();
-        setReport(data.data);
+    const interval = setInterval(() => {
+      fetchAndUpdate();
+    }, REFRESH_INTERVAL);
 
-        // Save to cache
-        localStorage.setItem(
-          CACHE_KEY,
-          JSON.stringify({ data: data.data, timestamp: new Date().getTime() })
-        );
-      } catch (error) {
-        console.error("Failed to fetch weekly report:", error);
-      }
-    };
-    fetchReport();
+    return () => clearInterval(interval);
   }, []);
 
   const defaultStats = {
@@ -66,13 +71,12 @@ const Index = () => {
 
   return (
     <AdminLayout>
-      <div className="space-y-6 p-2 ">
+      <div className="space-y-6 p-2">
         <div>
-          <h2 className="text-2xl font-display font-bold text-foreground">Dashboard</h2>
+          <h2 className="text-2xl font-bold">Dashboard</h2>
           <p className="text-muted-foreground">Here is your weekly overview.</p>
         </div>
 
-        {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <StatCard
             title="Total Users"
@@ -103,72 +107,87 @@ const Index = () => {
           />
         </div>
 
-        {/* Chart */}
-        {report && (
-          <div className="bg-card rounded-xl p-6 border border-border shadow-sm mt-6">
-            <h3 className="text-lg font-semibold mb-4">User Activity (Weekly)</h3>
-            <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart
-                  data={report.weekly}
-                  margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
-                >
-                  <defs>
-                    <linearGradient id="activeUsersGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="hsl(12, 79%, 43%)" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="hsl(12, 79%, 43%)" stopOpacity={0} />
-                    </linearGradient>
-                    <linearGradient id="newUsersGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="hsl(210, 80%, 55%)" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="hsl(210, 80%, 55%)" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(220, 15%, 88%)" />
-                  <XAxis
-                    dataKey="date"
-                    stroke="hsl(220, 10%, 45%)"
-                    fontSize={12}
-                    tickLine={false}
-                    axisLine={false}
-                  />
-                  <YAxis
-                    stroke="hsl(220, 10%, 45%)"
-                    fontSize={12}
-                    tickLine={false}
-                    axisLine={false}
-                    tickFormatter={(value) => (value >= 1000 ? `${value / 1000}k` : value)}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "hsl(0, 0%, 100%)",
-                      border: "1px solid hsl(220, 15%, 88%)",
-                      borderRadius: "8px",
-                      boxShadow: "0 4px 6px -1px hsl(220 20% 15% / 0.1)",
-                    }}
-                    labelStyle={{ color: "hsl(220, 20%, 15%)", fontWeight: 600 }}
-                  />
-                  <Legend />
-                  <Area
-                    type="monotone"
-                    dataKey="activeUsers"
-                    name="Active Users"
-                    stroke="hsl(12, 79%, 43%)"
-                    strokeWidth={2}
-                    fill="url(#activeUsersGradient)"
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="newRegistrations"
-                    name="New Registrations"
-                    stroke="hsl(210, 80%, 55%)"
-                    strokeWidth={2}
-                    fill="url(#newUsersGradient)"
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        )}
+      {report && (
+  <div className="bg-card rounded-xl p-6 border border-border shadow-sm mt-6">
+    <h3 className="text-lg font-semibold mb-4">User Activity (Weekly)</h3>
+
+    <div className="h-[300px]">
+      <ResponsiveContainer width="100%" height="100%">
+        <AreaChart
+          data={report.weekly}
+          margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+        >
+          <defs>
+            <linearGradient id="activeUsersGradient" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="hsl(12, 79%, 43%)" stopOpacity={0.3} />
+              <stop offset="95%" stopColor="hsl(12, 79%, 43%)" stopOpacity={0} />
+            </linearGradient>
+
+            <linearGradient id="newUsersGradient" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="hsl(210, 80%, 55%)" stopOpacity={0.3} />
+              <stop offset="95%" stopColor="hsl(210, 80%, 55%)" stopOpacity={0} />
+            </linearGradient>
+          </defs>
+
+          <CartesianGrid
+            strokeDasharray="3 3"
+            stroke="hsl(220, 15%, 88%)"
+          />
+
+          <XAxis
+            dataKey="date"
+            stroke="hsl(220, 10%, 45%)"
+            fontSize={12}
+            tickLine={false}
+            axisLine={false}
+          />
+
+          <YAxis
+            stroke="hsl(220, 10%, 45%)"
+            fontSize={12}
+            tickLine={false}
+            axisLine={false}
+            tickFormatter={(v) => (v >= 1000 ? `${v / 1000}k` : v)}
+          />
+
+          <Tooltip
+            contentStyle={{
+              backgroundColor: "hsl(0, 0%, 100%)",
+              border: "1px solid hsl(220, 15%, 88%)",
+              borderRadius: "8px",
+              boxShadow: "0 4px 6px -1px hsl(220 20% 15% / 0.1)"
+            }}
+            labelStyle={{
+              color: "hsl(220, 20%, 15%)",
+              fontWeight: 600
+            }}
+          />
+
+          <Legend />
+
+          <Area
+            type="monotone"
+            dataKey="activeUsers"
+            name="Active Users"
+            stroke="hsl(12, 79%, 43%)"
+            strokeWidth={2}
+            fill="url(#activeUsersGradient)"
+          />
+
+          <Area
+            type="monotone"
+            dataKey="newRegistrations"
+            name="New Registrations"
+            stroke="hsl(210, 80%, 55%)"
+            strokeWidth={2}
+            fill="url(#newUsersGradient)"
+          />
+        </AreaChart>
+      </ResponsiveContainer>
+    </div>
+  </div>
+)}
+
       </div>
     </AdminLayout>
   );

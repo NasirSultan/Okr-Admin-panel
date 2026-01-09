@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, MoreHorizontal, UserCheck, UserX, Users } from "lucide-react";
+import { Search,Eye, MoreHorizontal, UserCheck, UserX, Users } from "lucide-react";
 import AdminLayout from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -104,13 +104,12 @@ const UsersPage = () => {
   const suspendedUsers = users.filter((u) => u.isBlocked).length;
 
   return (
-   <AdminLayout>
+  <AdminLayout>
   <div className="space-y-6 animate-fade-in p-2">
+
     {toast.show && (
       <div
-        className={`fixed top-4 right-4 px-4 py-2 rounded shadow text-white ${
-          toast.type === "error" ? "bg-red-500" : "bg-green-500"
-        }`}
+        className={`fixed top-4 right-4 px-4 py-2 rounded shadow text-white ${toast.type === "error" ? "bg-red-500" : "bg-green-500"}`}
       >
         {toast.message}
       </div>
@@ -125,107 +124,101 @@ const UsersPage = () => {
 
     {/* Top Cards */}
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-  <div className="relative p-6 sm:p-8 md:p-4 lg:p-4 bg-card border border-border rounded-lg flex flex-col gap-3 sm:gap-4 md:gap-2 lg:gap-2 transition-all duration-300 hover:border-blue-500">
-    <Users className="absolute top-4 right-4 h-10 w-10 sm:h-12 sm:w-12 md:h-8 md:w-8 lg:h-8 lg:w-8 text-blue-500" />
-    <p className="text-sm sm:text-base md:text-sm lg:text-sm text-muted-foreground">Total Users</p>
-    <p className="text-lg sm:text-xl md:text-lg lg:text-lg font-bold">{totalUsers.toLocaleString()}</p>
-    <p className="text-xs sm:text-sm md:text-xs lg:text-xs text-green-500">+12.5% from last month</p>
-  </div>
+      <div className="relative p-4 bg-card border border-border rounded-lg flex flex-col gap-2 hover:border-blue-500">
+        <Users className="absolute top-2 right-2 h-8 w-8 text-blue-500" />
+        <p className="text-sm text-muted-foreground">Total Users</p>
+        <p className="text-lg font-bold">{totalUsers.toLocaleString()}</p>
+        <p className="text-xs text-green-500">+12.5% from last month</p>
+      </div>
 
-  <div className="relative p-6 sm:p-8 md:p-4 lg:p-4 bg-card border border-border rounded-lg flex flex-col gap-3 sm:gap-4 md:gap-2 lg:gap-2 transition-all duration-300 hover:border-green-500">
-    <UserCheck className="absolute top-4 right-4 h-10 w-10 sm:h-12 sm:w-12 md:h-8 md:w-8 lg:h-8 lg:w-8 text-green-500" />
-    <p className="text-sm sm:text-base md:text-sm lg:text-sm text-muted-foreground">Active Users</p>
-    <p className="text-lg sm:text-xl md:text-lg lg:text-lg font-bold">{activeUsers.toLocaleString()}</p>
-    <p className="text-xs sm:text-sm md:text-xs lg:text-xs text-green-500">+8.3% from last month</p>
-  </div>
+      <div className="relative p-4 bg-card border border-border rounded-lg flex flex-col gap-2 hover:border-green-500">
+        <UserCheck className="absolute top-2 right-2 h-8 w-8 text-green-500" />
+        <p className="text-sm text-muted-foreground">Active Users</p>
+        <p className="text-lg font-bold">{activeUsers.toLocaleString()}</p>
+        <p className="text-xs text-green-500">+8.3% from last month</p>
+      </div>
 
-  <div className="relative p-6 sm:p-8 md:p-4 lg:p-4 bg-card border border-border rounded-lg flex flex-col gap-3 sm:gap-4 md:gap-2 lg:gap-2 transition-all duration-300 hover:border-red-500">
-    <UserX className="absolute top-4 right-4 h-10 w-10 sm:h-12 sm:w-12 md:h-8 md:w-8 lg:h-8 lg:w-8 text-red-500" />
-    <p className="text-sm sm:text-base md:text-sm lg:text-sm text-muted-foreground">Suspended Users</p>
-    <p className="text-lg sm:text-xl md:text-lg lg:text-lg font-bold">{suspendedUsers.toLocaleString()}</p>
-    <p className="text-xs sm:text-sm md:text-xs lg:text-xs text-red-500">-1.2% from last month</p>
-  </div>
-</div>
-
+      <div className="relative p-4 bg-card border border-border rounded-lg flex flex-col gap-2 hover:border-red-500">
+        <UserX className="absolute top-2 right-2 h-8 w-8 text-red-500" />
+        <p className="text-sm text-muted-foreground">Suspended Users</p>
+        <p className="text-lg font-bold">{suspendedUsers.toLocaleString()}</p>
+        <p className="text-xs text-red-500">-1.2% from last month</p>
+      </div>
+    </div>
 
     {/* Search + Filter */}
-    <div className="flex flex-col sm:flex-row gap-4 mt-4">
+    <div className="flex flex-col sm:flex-row gap-2 mt-4">
       <div className="relative flex-1">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
           placeholder="Search users..."
-          className="pl-10"
+          className="pl-8"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
         />
       </div>
-      <Button
-        variant={filter === "active" ? "default" : "outline"}
-        onClick={() => setFilter("active")}
-      >
-        Active
-      </Button>
-      <Button
-        variant={filter === "suspended" ? "destructive" : "outline"}
-        onClick={() => setFilter("suspended")}
-      >
-        Suspended
-      </Button>
-      <Button
-        variant={filter === "all" ? "default" : "outline"}
-        onClick={() => setFilter("all")}
-      >
-        All
-      </Button>
+      <div className="flex gap-2 flex-wrap">
+        <Button variant={filter === "active" ? "default" : "outline"} onClick={() => setFilter("active")}>Active</Button>
+        <Button variant={filter === "suspended" ? "destructive" : "outline"} onClick={() => setFilter("suspended")}>Suspended</Button>
+        <Button variant={filter === "all" ? "default" : "outline"} onClick={() => setFilter("all")}>All</Button>
+      </div>
     </div>
 
-    {/* Table */}
+    {/* Table for small screens */}
     <div className="bg-card rounded-xl border border-border overflow-hidden mt-4">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Name</TableHead>
-            <TableHead>Email</TableHead>
-            <TableHead>Suspend/Unsuspend</TableHead>
-            <TableHead>Delete</TableHead>
-            <TableHead>Detail</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {filteredUsers.map((user) => (
-            <TableRow key={user.id}>
-              <TableCell className="font-medium">{user.name}</TableCell>
-              <TableCell className="text-muted-foreground">{user.email}</TableCell>
-              <TableCell>
-                <Button
-                  variant={user.isBlocked ? "destructive" : "default"}
-                  onClick={() => handleToggleBlock(user.id, user.isBlocked)}
-                  disabled={loading.block === user.id}
-                >
-                  {loading.block === user.id ? "..." : user.isBlocked ? "Unsuspend" : "Suspend"}
-                </Button>
-              </TableCell>
-              <TableCell>
-                <Button
-                  variant="destructive"
-                  onClick={() => handleDelete(user.id)}
-                  disabled={loading.delete === user.id}
-                >
-                  {loading.delete === user.id ? "..." : "Delete"}
-                </Button>
-              </TableCell>
-              <TableCell>
-                <Button variant="ghost" size="icon" onClick={() => handleDetail(user.id)}>
-                  <MoreHorizontal className="h-4 w-4" />
-                </Button>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+      {filteredUsers.length === 0 ? (
+        <div className="p-4 text-center text-gray-500">No users found</div>
+      ) : (
+       <div className="divide-y divide-border">
+  {filteredUsers.map((user) => (
+    <div key={user.id} className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 gap-2">
+
+      {/* Status for small screens (top-right) */}
+      <p className={`absolute top-2 right-2 text-xs font-semibold sm:hidden ${user.isBlocked ? "text-red-500" : "text-green-500"}`}>
+        {user.isBlocked ? "Suspended" : "Active"}
+      </p>
+
+      {/* Name, Email, and Status for md/lg screens */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:gap-4 flex-1">
+        <p className="font-medium">{user.name}</p>
+        <p className="text-sm text-muted-foreground">{user.email}</p>
+        <p className={`text-xs font-semibold hidden sm:inline ${user.isBlocked ? "text-red-500" : "text-green-500"}`}>
+          {user.isBlocked ? "Suspended" : "Active"}
+        </p>
+      </div>
+
+      {/* Buttons aligned to right */}
+      <div className="flex gap-2 mt-2 sm:mt-0">
+        <Button
+          variant={user.isBlocked ? "destructive" : "default"}
+          onClick={() => handleToggleBlock(user.id, user.isBlocked)}
+          disabled={loading.block === user.id}
+        >
+          {loading.block === user.id ? "..." : user.isBlocked ? "Unsuspend" : "Suspend"}
+        </Button>
+        <Button
+          variant="destructive"
+          onClick={() => handleDelete(user.id)}
+          disabled={loading.delete === user.id}
+        >
+          {loading.delete === user.id ? "..." : "Delete"}
+        </Button>
+        <Button variant="ghost" size="icon" onClick={() => handleDetail(user.id)}>
+          <Eye className="h-4 w-4" />
+        </Button>
+      </div>
+
     </div>
+  ))}
+</div>
+
+      )}
+    </div>
+
   </div>
 </AdminLayout>
+
+
 
   );
 };
